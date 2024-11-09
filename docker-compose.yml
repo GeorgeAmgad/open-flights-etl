@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  postgres_db:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: postgres_db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - my_network
+
+  data_collection:
+    build:
+      context: ./data-collection
+      dockerfile: Dockerfile
+    depends_on:
+      - postgres_db
+    networks:
+      - my_network
+
+  jupyter:
+    image: jupyter/datascience-notebook:latest
+    container_name: jupyter
+    environment:
+      JUPYTER_TOKEN: ${JUPYTER_TOKEN}
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./notebooks:/home/jovyan/notebooks
+    networks:
+      - my_network
+    depends_on:
+      - postgres_db
+    command: start-notebook.sh --NotebookApp.token=${JUPYTER_TOKEN}
+
+networks:
+  my_network:
+
+volumes:
+  postgres_data:
